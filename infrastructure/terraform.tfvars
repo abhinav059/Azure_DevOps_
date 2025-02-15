@@ -1,0 +1,5 @@
+resource_group_name = "container01"
+acr_name           = "containerpracticeproject"
+container_name     = "sampletodoapp"
+dns_label         = "abhinav-demo-project"
+image_tag         = "latest"

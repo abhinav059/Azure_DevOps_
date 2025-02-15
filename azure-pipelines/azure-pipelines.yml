@@ -1,0 +1,77 @@
+# Azure DevOps Pipeline for Building and Deploying a React Todo App
+# This pipeline automates the process of building a Docker image, pushing it to Azure Container Registry (ACR), 
+# and deploying it to Azure Container Instance (ACI).
+
+trigger:
+- main  # Trigger the pipeline when changes are pushed to the 'main' branch.
+
+resources:
+- repo: self  # Use the same repository where the pipeline is defined.
+
+variables:
+  # Azure Container Registry (ACR) service connection for authentication
+  dockerRegistryServiceConnection: '01146ac5-205f-4835-9ede-66d6cab85d56'
+
+  # Name of the Docker image repository inside ACR
+  imageRepository: 'sampletodoapp'
+
+  # Azure Container Registry (ACR) URL where the image will be pushed
+  containerRegistry: 'containerpracticeproject.azurecr.io'
+
+  # Path to the Dockerfile used for building the container image
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+
+  # Tag for the Docker image, typically using the Build ID to ensure uniqueness
+  tag: '$(Build.BuildId)'
+
+  # Specify the VM image used to run the pipeline jobs
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build  # Define a stage for building and pushing the container image
+  displayName: Build and push stage  # User-friendly name for the stage
+  jobs:
+  - job: Build  # Define a job within the stage
+    displayName: Build  # User-friendly name for the job
+    pool:
+      vmImage: $(vmImageName)  # Use the specified virtual machine image
+
+    steps:
+    # Step 1: Log in to Azure Container Registry (ACR)
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'Free Trial(516cc7ad-60fa-40d7-8dda-e470bf8a22d1)'  # Azure subscription name
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az acr login --name=$(containerRegistry)'
+
+    # Step 2: Build the Docker image and push it to ACR
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush  # Build the image and push it to the registry
+        repository: $(imageRepository)  # Name of the image repository
+        dockerfile: $(dockerfilePath)  # Path to the Dockerfile
+        containerRegistry: $(dockerRegistryServiceConnection)  # Service connection for ACR authentication
+        tags: |
+          $(tag)  # Use the Build ID as the image tag
+
+    # Step 3: Deploy the container to Azure Container Instance (ACI)
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'Free Trial(516cc7ad-60fa-40d7-8dda-e470bf8a22d1)'  # Azure subscription name
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az container create \
+            --name Containerpracticeproject \  # Name of the container instance
+            --resource-group container01 \  # Resource group where the container will be deployed
+            --image $(containerRegistry)/$(imageRepository):$(tag) \  # Use the built image from ACR
+            --cpu 1 \  # Allocate 1 CPU core to the container
+            --memory 1.5 \  # Allocate 1.5 GB of memory
+            --registry-login-server $(containerRegistry) \  # ACR login server
+            --registry-username containerdemopractice  \  # ACR username
+            --registry-password Pjzv8ugVnfsZCvPNixJhuU4sNIfQLAU8t9HR7R6Hlw+ACRDlv6tu \  # ACR password (should be stored securely)
+            --dns-name-label abhinav-demo-project \  # Public DNS name for the container
+            --ports 80  # Expose port 80 for HTTP traffic
+
