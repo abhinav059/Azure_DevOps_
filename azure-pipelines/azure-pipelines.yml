@@ -71,7 +71,7 @@ stages:
             --memory 1.5 \  # Allocate 1.5 GB of memory
             --registry-login-server $(containerRegistry) \  # ACR login server
             --registry-username containerdemopractice  \  # ACR username
-            --registry-password Pjzv8ugVnfsZCvPNixJhuU4sNIfQLAU8t9HR7R6Hlw+ACRDlv6tu \  # ACR password (should be stored securely)
+            --registry-password "GIVE YOUR OWN PASSWORD" \  # ACR password (should be stored securely)
             --dns-name-label abhinav-demo-project \  # Public DNS name for the container
             --ports 80  # Expose port 80 for HTTP traffic
 
